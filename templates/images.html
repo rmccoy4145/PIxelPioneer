@@ -1,0 +1,186 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Apply Filter
+{% endblock %}
+
+{% block main %}
+    <script>
+        function showSpinner(button) {
+            var span = button.querySelector('span');
+            span.classList.remove('visually-hidden');
+        }
+
+        function hideSpinner(button) {
+            var span = button.querySelector('span');
+            span.classList.add('visually-hidden');
+        }
+
+        function handleSubmit(button) {
+            console.info("click")
+            // Prevent the default form submission
+            event.preventDefault();
+
+            var form = button.form;
+
+            var selectElement = form.querySelector('select[name="process_type"]');
+
+            var imageName = form.querySelector('input[name="image_name"]').value;
+            var processType = selectElement.value;
+
+            var formData = new FormData();
+
+            formData.append('image_name', imageName);
+            formData.append('process_type', processType);
+
+            showSpinner(button)
+
+            fetch('/processImage', { // Replace with your endpoint
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Server responded with ' + response.status);
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Here, 'blob' is the Blob object you retrieved
+                    console.log('Blob retrieved:', blob);
+                    hideSpinner(button)
+                    // You can now use this blob as needed, e.g., to create an object URL
+                    const imageUrl = URL.createObjectURL(blob);
+                    // Example: Open the image in a new window/tab
+                    window.open(imageUrl, '_blank');
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    hideSpinner(button)
+                    const toastEl = document.getElementById('errorToast');
+                    const toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 5000
+                    });
+                    toast.show();
+                });
+        }
+
+        function handleImageRemove(button) {
+            console.info("click")
+            // Prevent the default form submission
+            event.preventDefault();
+
+            var form = button.form;
+
+            var imageName = form.querySelector('input[name="image_name"]').value;
+            var formData = new FormData();
+
+            formData.append('image_name', imageName);
+
+            showSpinner(button)
+            fetch('/removeImage', { // Replace with your endpoint
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        hideSpinner(button)
+                        throw new Error('Server responded with ' + response.status);
+                    }
+                })
+                .then(data => {
+                    hideSpinner(button)
+                    window.location.href = '/images';
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    hideSpinner(button)
+                    const toastEl = document.getElementById('errorToast');
+                    const toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 5000
+                    });
+                    toast.show();
+                });
+        }
+    </script>
+
+    <div class="toast frontToast error-color" id="errorToast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header toasterror-header">
+        <strong class="me-auto">Error</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body toasterror-body">
+         Error performing Action!
+        </div>
+    </div>
+
+    <div class="container mt-3">
+        <div class="row justify-content-md-center mb-3">
+            <div class="col">
+                <h2 class="font-2">Your Images</h2>
+            </div>
+        </div>
+        <div class="row justify-content-md-center">
+            <div class="col">
+                <!--Nothing -->
+            </div>
+            <div class="col-6">
+                <div id="imageCarousel" class="carousel slide">
+                    <div class="carousel-inner">
+                        {% set image_count = image_paths|list|length %}
+                        {% if image_count < 1 %}
+                            <div class="carousel-item active">
+                                <img src="static/images/default_image.png">
+                            </div>
+                        {% else %}
+                            {% for path in image_paths %}
+                            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                <img class="rounded" src="{{ path }}" height="400">
+                                <form class="imageProcessForm">
+                                    <div class="mb-3 mt-3">
+                                        <div class="row">
+                                            <div class="col d-flex justify-content-end">
+                                                <input type="hidden" class="form-control mx-auto w-auto" id="imageName" name="image_name" value="{{ path }}">
+                                                <select id="processSelect" name="process_type">
+                                                    <option value="BLUR">Blur</option>
+                                                    <option value="GRAYSCALE">Grayscale</option>
+                                                    <option value="SMOOTH">Smooth</option>
+                                                </select>
+                                            </div>
+                                            <div class="col d-flex justify-content-start">
+                                                <button class="btn btn-success" onclick="handleSubmit(this)">
+                                                    <span class="spinner-border spinner-border-sm visually-hidden" aria-hidden="true"></span>
+                                                    <span class="" role="status">Apply</span>
+                                                </button>
+                                            </div>
+                                            <div class="col d-flex justify-content-start">
+                                                <button class="btn btn-danger" onclick="handleImageRemove(this)">
+                                                    <span class="spinner-border spinner-border-sm visually-hidden" aria-hidden="true"></span>
+                                                    <span class="" role="status">X</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#imageCarousel" data-bs-slide="prev">
+                      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#imageCarousel" data-bs-slide="next">
+                      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                      <span class="visually-hidden">Next</span>
+                    </button>
+                  </div>
+            </div>
+            <div class="col">
+                <!--Nothing -->
+            </div>
+        </div>
+    </div>
+{% endblock %}

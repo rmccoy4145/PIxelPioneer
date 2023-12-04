@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Log In
+{% endblock %}
+
+{% block main %}
+<script>
+    function handleSubmit(button) {
+        console.info("click")
+        // Prevent the default form submission
+        event.preventDefault();
+
+        var form = button.form;
+
+        var username = form.querySelector('input[name="username"]').value;
+        var password = form.querySelector('input[name="password"]').value;
+
+        if (username === "" || password === "") {
+            return;
+        }
+
+        var formData = new FormData();
+
+        formData.append('username', username);
+        formData.append('password', password);
+
+        fetch('/login', { // Replace with your endpoint
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Server responded with ' + response.status);
+                }
+            })
+            .then(data => {
+                window.location.href = '/';
+
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                const toastEl = document.getElementById('errorToast');
+                const toast = new bootstrap.Toast(toastEl, {
+                    autohide: true,
+                    delay: 5000
+                });
+                toast.show();
+            });
+    }
+
+</script>
+
+<div class="toast frontToast" id="errorToast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header toasterror-header">
+    <strong class="me-auto">Error</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body toasterror-body">
+     Invalid login
+    </div>
+</div>
+<div class="container mt-5">
+    <div class="row justify-content-md-center mb-3">
+        <div class="col">
+            <h2 class="font-2">Login</h2>
+        </div>
+    </div>
+    <div class="row justify-content-md-center mb-3">
+        <div class="col">
+            <form action="/login" method="post">
+                <div class="mb-3">
+                    <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="username" name="username" placeholder="Username" type="text" required>
+                </div>
+                <div class="mb-3">
+                    <input class="form-control mx-auto w-auto" id="password" name="password" placeholder="Password" type="password" required>
+                </div>
+                <button class="btn btn-success" onclick="handleSubmit(this)">Submit</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
