@@ -22,7 +22,7 @@ pip install -r requirements.txt
 
 execute the following command to start the application:
 ```
-flash run
+flask run
 ```
 
 Test Account Credentials:
